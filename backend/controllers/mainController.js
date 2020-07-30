@@ -3,8 +3,7 @@
 const { pool } = require('../models/dbConfig');
 var nodemailer = require('nodemailer');
 var bcrypt = require('bcrypt');
-var otpGenerator = require('otp-generator')
-
+var otpGenerator = require('otp-generator');
 
 module.exports = {
     home:home,
@@ -13,7 +12,9 @@ module.exports = {
     dashboard:dashboard,
     logout:logout,
     registerPost:registerPost,
-    loginPost:loginPost
+    loginPost:loginPost,
+    userInfo:userInfo,
+    postUserInfo:postUserInfo
     }
 
 
@@ -46,6 +47,25 @@ function register(req,res){
 function dashboard(req,res){
 	checkNotAuthenticated(req,res);
     res.render("dashboard", {user: req.user.name});
+}
+
+function userInfo(req,res){
+    checkNotAuthenticated(req,res);
+    // console.log(req.user);
+    pool.query(
+        `SELECT * FROM users
+        WHERE email = ($1)`,[req.user.email], (err,results) => {
+            if(err){
+                throw err;
+            }
+
+            let {name, email, phone, address, gst} = req.user;
+            // console.log({name, email});
+            // console.log(req.user);
+            res.render('userinfo',{name:name, email:email, phone:phone, address:address, gst:gst});
+        }
+    );
+	// res.render("userinfo");
 }
 
 function logout(req,res){
@@ -136,14 +156,10 @@ async function registerPost(req,res){
                                 res.flash("success_msg","sent");
                             }
                         });
-                                console.log("chk 1");
-                                // res.send({"otp":otpsent});
-                        // res.sendStatus(200);
-                        // res.end("success");
-                        // res.render('register', {otpsent: otpsent})
+                                // console.log("chk 1");
                         res.json({status:200})
 
-                        console.log("chk 2");
+                        // console.log("chk 2");
                     }
                     else{
                         pool.query(
@@ -153,9 +169,9 @@ async function registerPost(req,res){
                                     throw err;
                                 }
                                 console.log(results.rows[0].otp );
-                                if(results.rows[0].otp != otpsent){
+                                if(results.rows[0].otp != otp){
                                     errors.push({message: "otp did not match"});
-                                    // res.render('register', (errors));
+                                    res.render('register', (errors));
                                 }
                             }
                         );
@@ -178,6 +194,46 @@ async function registerPost(req,res){
             }
         );
     }
+}
+
+function postUserInfo(req,res){
+
+    console.log(req.body);
+    let { chngname, chngemail, chngphone, chngaddress, chnggst, chngfoar} = req.body;
+    console.log({ chngname, chngemail, chngphone, chngaddress, chnggst, chngfoar});
+    let { name, email, phone, address, gst} = req.user;
+    console.log({ name, email, phone, address, gst});
+    let errors = [];
+    if(!chngname){
+        name = name;
+    }
+    if(!chngemail){
+        email = email;
+    }
+    if(!chngphone){
+        phone = phone;
+    }
+    if(!chngaddress){
+        address = address;
+    }
+    if(!chnggst){
+        gst = gst;
+    }
+    
+    pool.query(
+        `UPDATE users
+        SET name = ($1),
+        email = ($2),
+        phone = ($3),
+        address = ($4),
+        gst = ($5)
+        WHERE email = ($6)`,[chngname,chngemail,chngphone,chngaddress,chnggst,email], (err,results) => {
+            if(err){
+                throw err;
+            }
+            res.redirect('dashboard');
+        }
+    );
 }
 
 function loginPost(req,res){

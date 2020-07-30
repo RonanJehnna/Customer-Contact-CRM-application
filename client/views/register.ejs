@@ -17,20 +17,16 @@
         function myFunction() {
             var x = document.getElementById("myDiv");
             var y = document.getElementById("otp").required = true;
-            console.log(x);
+            // console.log(x);
             if (x.style.display == "") {
-                console.log("here");
+                // console.log("here");
                 x.style.display = "block";
             } 
-            else{
-                console.log("wrong");
-            }
 
         }
 
         $(document).ready(function(){
-            // var x = document.getElementById("myDiv");
-            console.log($('#myDiv').css('display'));
+            // console.log($('#myDiv').css('display'));
             $('#main').submit(function(e){
                 
                 if($('#myDiv').css('display') == 'block'){
@@ -43,10 +39,7 @@
                 $.post("/users/register", formData).done(function(data){
                     console.log("Success",data);
                     myFunction();
-                    // e.allowDefault();
-                    // return true;
                 })
-                // return true;
             });
             console.log("as");
         });
@@ -81,9 +74,6 @@
         <div id="myDiv">
             <input type="number" id="otp" name="otp" placeholder="OTP" />
         </div>
-        <!-- <% if(typeof otpsent!='undefined') { %> -->
-
-        <!-- <% } %> -->
         <div>
             <input id="button" type="submit" value="Register" />
         </div>
