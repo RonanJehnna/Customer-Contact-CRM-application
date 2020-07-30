@@ -5,6 +5,8 @@ const bcrypt = require('bcrypt');
 const session = require('express-session');
 const flash = require("express-flash");
 const passport = require("passport");
+var nodemailer = require('nodemailer');
+var otpGenerator = require('otp-generator')
 require("dotenv").config();
 
 const intializePassport = require("./passportConfig");
@@ -12,6 +14,32 @@ const intializePassport = require("./passportConfig");
 intializePassport(passport);
 
 const PORT = process.env.port || 4000;
+
+
+var transporter = nodemailer.createTransport({
+    service: "gmail",
+    host: "smtp.gmail.com",
+    auth: {
+        user: "asj120soda@gmail.com",
+        pass: "a1s2d3f4g5h6j7k8l9"
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
+});
+
+// const transporter = nodemailer.createTransport({
+//     host: 'smtp.ethereal.email',
+//     port: 587,
+//     auth: {
+//         user: 'koby.friesen@ethereal.email',
+//         pass: 'sscWc4RvXF8F83xDfa'
+//     },
+    
+//     tls: {
+//         rejectUnauthorized: false
+//     }
+// });
 
 
 app.set('view engine', 'ejs');
@@ -51,17 +79,23 @@ app.get('/users/logout', (req,res) => {
     res.redirect('/users/login')
 });
 
+// app.post('users/send', (req,res) => {
+    
+// });
+
 app.post('/users/register', async (req, res) => {
-    let { name, email, password, password2} = req.body;
+    let { name, email, password, password2, otp} = req.body;
 
     console.log({
         name,
         email,
         password,
-        password2
+        password2,
+        otp
     });
 
-    let errors = [];
+    let errors = [], optsent;
+
 
     if(!name || !email || !password || !password2){
         errors.push({message: "Please enter all fields"});
@@ -91,22 +125,76 @@ app.post('/users/register', async (req, res) => {
                 console.log(results.rows);
 
                 if(results.rows.length > 0){
-                    errors.push({message: "Emal already registered"});
+                    errors.push({message: "Email already registered"});
                     res.render('register', { errors });
                 }else{
-                    pool.query(
-                        `INSERT INTO users (name, email, password)
-                        VALUES ($1, $2, $3)
-                        RETURNING id, password`, [name, email, hashedPassword], (err, results) => {
-                            if(err){
-                                throw err;
-                            }
-                            console.log("here");
-                            console.log(results.rows);
-                            req.flash('success_msg', "You are now registered. Please log in to continue");
-                            res.redirect('/users/login');
+                    if(!otp){
+                        otpsent = otpGenerator.generate(6, { upperCase: false, specialChars: false, alphabets:false });
+                        var mailOptions={
+                            to : email,
+                            subject : "Email verification",
+                            text : "Otp for Login : "+ otpsent
                         }
-                    );
+                        console.log(mailOptions);
+                        transporter.sendMail(mailOptions, function(err, resp){
+                            if(err){
+                                console.log(err);
+                                // res.end("error");
+                            }else{
+                                console.log(otpsent);
+                                pool.query(
+                                    `INSERT INTO otp (email, otp)
+                                    VALUES ($1,$2)
+                                    RETURNING email`,[email, otpsent], (err, results) => {
+                                        if(err){
+                                            throw err;
+                                        }
+                                        console.log(results.rows);
+                                    }
+                                );
+                                console.log("Message sent: " + resp.message);
+
+                                res.flash("success_msg","sent");
+                            }
+                        });
+                                console.log("chk 1");
+                                // res.send({"otp":otpsent});
+                        // res.sendStatus(200);
+                        // res.end("success");
+                        // res.render('register', {otpsent: otpsent})
+                        res.json({status:200})
+
+                        console.log("chk 2");
+                    }
+                    else{
+                        pool.query(
+                            `SELECT otp FROM otp
+                            WHERE email = ($1)`,[email], (err,results) =>{
+                                if(err){
+                                    throw err;
+                                }
+                                console.log(results.rows[0].otp );
+                                if(results.rows[0].otp != otpsent){
+                                    errors.push({message: "otp did not match"});
+                                    // res.render('register', (errors));
+                                }
+                            }
+                        );
+                        console.log("chk 3");
+                        pool.query(
+                            `INSERT INTO users (name, email, password)
+                            VALUES ($1, $2, $3)
+                            RETURNING id, password`, [name, email, hashedPassword], (err, results) => {
+                                if(err){
+                                    throw err;
+                                }
+                                console.log("here");
+                                console.log(results.rows);
+                                req.flash('success_msg', "You are now registered. Please log in to continue");
+                                res.redirect('/users/login');
+                            }
+                        );
+                    }
                 }
             }
         );

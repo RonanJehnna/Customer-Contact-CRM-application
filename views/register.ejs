@@ -4,7 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton-framework/1.1.1/skeleton.min.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>Document</title>
+    <style>
+        #myDiv{
+            display: none;
+        }
+    </style>
+
+    <script>
+
+        function myFunction() {
+            var x = document.getElementById("myDiv");
+            var y = document.getElementById("otp").required = true;
+            console.log(x);
+            if (x.style.display == "") {
+                console.log("here");
+                x.style.display = "block";
+            } 
+            else{
+                console.log("wrong");
+            }
+
+        }
+
+        $(document).ready(function(){
+            // var x = document.getElementById("myDiv");
+            console.log($('#myDiv').css('display'));
+            $('#main').submit(function(e){
+                
+                if($('#myDiv').css('display') == 'block'){
+                    return true;
+                }
+                e.preventDefault();
+
+                var formData = $(this).serialize();
+
+                $.post("/users/register", formData).done(function(data){
+                    console.log("Success",data);
+                    myFunction();
+                    // e.allowDefault();
+                    // return true;
+                })
+                // return true;
+            });
+            console.log("as");
+        });
+
+        
+    </script>
 </head>
 <body>
     <h1>Register</h1>
@@ -17,7 +65,7 @@
         <% } %>
     </ul>
 
-    <form action="/users/register" method="POST">
+    <form id="main" action="/users/register" method="POST">
         <div>
             <input type="text" id="name" name="name" placeholder="Name" required/>
         </div>
@@ -30,10 +78,17 @@
         <div>
             <input type="password" id="password2" name="password2" placeholder="Confirm password" required/>
         </div>
+        <div id="myDiv">
+            <input type="number" id="otp" name="otp" placeholder="OTP" />
+        </div>
+        <!-- <% if(typeof otpsent!='undefined') { %> -->
+
+        <!-- <% } %> -->
         <div>
-            <input type="submit" value="Register" />
+            <input id="button" type="submit" value="Register" />
         </div>
         <a href="/users/login">Already registered? Login here</a>
     </form>
+
 </body>
 </html>
