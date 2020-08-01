@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton-framework/1.1.1/skeleton.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <title>Document</title>
+    <style>
+        label{
+            display: inline-block;
+            padding-left: 0.5em;
+        }
+        form{
+            margin-bottom: 0em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Contact Screen</h1>
+    <table id="commHistoryTable"></table>
+</body>
+<script>
+
+    
+    function generateTableHead(table, data) {
+        let thead = table.createTHead();
+        let row = thead.insertRow(0);
+            let th = document.createElement("th");
+            let text = document.createTextNode("Comment Information");
+            th.appendChild(text);
+            row.appendChild(th);
+            
+            let th1 = document.createElement("th");
+            text = document.createTextNode("Date of Communication");
+            th1.appendChild(text);
+            row.appendChild(th1);
+    }
+
+    function generateTable(table, data) {
+        for (let element of data) {
+            let row = table.insertRow();
+            for (key in element) {
+                let cell = row.insertCell();
+                let text = document.createTextNode(element[key]);
+                cell.appendChild(text);
+            }
+        }
+    }
+    let table = document.getElementById("commHistoryTable");
+    // let data = Object.keys(mountains[0]);
+    $.post("/users/commScreenData").done(function(data){
+        console.log("Success",data);
+        generateTable(table, data.commHistory); // generate the table first
+        generateTableHead(table, data.commHistory);
+    });
+</script>
+</html>
